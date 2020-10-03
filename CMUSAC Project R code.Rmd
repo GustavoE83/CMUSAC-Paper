@@ -1,0 +1,940 @@
+---
+title: "CMUSAC Project"
+author: "Anonymous"
+date: "6/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+install.packages("dplyr") 
+library("dplyr")
+library("readr")
+library("knitr")
+set.seed(1356)
+
+```
+
+
+```{r, echo=FALSE}
+###########################
+# STYLE EDITS: IGNORE THIS
+###########################
+
+knitr::opts_chunk$set(message = FALSE) # include this if you don't want markdown to knit messages
+knitr::opts_chunk$set(warning = FALSE) # include this if you don't want markdown to knit warnings
+knitr::opts_chunk$set(echo=TRUE) # set echo=FALSE to hide code from html output
+```
+#The Problem with Empty Stands at the NBA Bubble- Code
+
+##How to get the data
+
+To get the data, first go to https://www.basketball-reference.com/leagues/ . 
+There, you will be able toget game data for each season from 2015-16 to 2019-20.
+The game data will include dates, scores, teams, attendance and location 
+(make sure to take the NBA Global games out of the dataset). 
+
+Next, go to http://www.espn.com/nba/attendance. There, you will find the average attendance per game and the average capacity percentage per game.F 
+rom these numbers, you can get an approximation for the capacity of each arena 
+per year. Although this is just an approximation, we recommend this approach 
+because teams change arenas and arenas get renovated, so we had to confirm arena
+capacity for all thirty teams each season. This was the only website I could 
+find that had all the numbers in one place.
+
+Use math to get the capacity percentage for each game, and use the 100%, 95%,
+and 85% limits to divide each game into Sellout, High, Medium or Low attendance.
+
+This will get you the dataset needed in order to test the second hypothesis. To
+get the dataset needed to to test the first hypothesis, simply create another 
+table with only two variables: points scored and status. Then paste the first
+score column from the original dataset and label it as Away status. Do the same
+for the second score column but label it as Home status.
+
+You can find the finished datasets here:
+
+1st hypothesis:https://drive.google.com/file/d/1IKFJ3VDsoDFaH4Z0mOP44aBdJnOLUpRH/view?usp=sharing
+
+2nd hypothesis:https://drive.google.com/file/d/1G0jnmVMTsOhMLp_Sjc1TXbNazs1W4tIu/view?usp=sharing
+
+##First hypothesis
+
+This is the code we used to test our first hypothesis.
+
+###Box plot
+
+```{r}
+boxplot(PTS~Status, data= Home_or_Away, main= "Points Per Game Box Plots for Home and Away Teams", ylab= "Points Per Game", names= c("Away", "Home"))
+```
+
+```{r}
+Home_or_Away$factored_status <- factor(Home_or_Away$Status)
+```
+
+###ANOVA Test
+
+```{r}
+HoA_anovamod <- aov(PTS ~ factored_status,
+                        data = Home_or_Away)
+summary(HoA_anovamod)
+```
+
+###Tukey plot
+
+```{r}
+
+tukey_HoA <- TukeyHSD(HoA_anovamod)
+
+plot(tukey_HoA)
+
+```
+
+```{r}
+plot(HoA_anovamod, which=1)
+
+plot(HoA_anovamod, which=2)
+```
+
+##Second Hypothesis
+
+This is the code needed in order to test the second hypothesis. If code doesn't
+work, it means that that subset only had one attendance group (for example, 
+Golden State sold out all their home games, so we can't do ANOVA on their home
+subset).
+
+### NBA subset
+
+```{r}
+Attendance_worksheet_Final_modified$factored_percent_group <- factor(Attendance_worksheet_Final_modified$Percent_Group)
+```
+
+```{r}
+Awaypts_anovamod <- aov(PTS ~ factored_percent_group,
+                        data = Attendance_worksheet_Final_modified)
+summary(Awaypts_anovamod)
+```
+
+
+```{r}
+Homepts_anovamod <- aov(PTS_1 ~ factored_percent_group,
+                        data = Attendance_worksheet_Final_modified)
+summary(Homepts_anovamod)
+```
+
+
+```{r}
+
+tukey_Homepts <- TukeyHSD(Homepts_anovamod)
+
+plot(tukey_Homepts)
+
+
+
+```
+
+```{r}
+tukey_AwayPts <- TukeyHSD(Awaypts_anovamod)
+plot(tukey_AwayPts)
+```
+```{r}
+
+summarise(group_by(Attendance_worksheet_Final_modified, factored_percent_group), 
+          mean(PTS),
+          sd(PTS),
+          n())
+
+```
+
+```{r}
+
+summarise(group_by(Attendance_worksheet_Final_modified, factored_percent_group), 
+          mean(PTS_1),
+          sd(PTS_1),
+          n())
+
+```
+
+```{r}
+Attendance_worksheet_Final_modified$factored_Visitor <- factor(Attendance_worksheet_Final_modified$Visitor)
+
+Attendance_worksheet_Final_modified$factored_Home <- factor(Attendance_worksheet_Final_modified$Home)
+```
+
+###Atlanta tests
+
+```{r}
+att_subset_team1V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==1) 
+
+att_subset_team1H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==1) 
+
+att_subset_team1V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team1V)
+summary(att_subset_team1V_aov)
+
+att_subset_team1H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team1H)
+summary(att_subset_team1H_aov)
+```
+###Boston Celtics tests
+
+```{r}
+att_subset_team2V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==2) 
+
+att_subset_team2H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==2) 
+
+att_subset_team2V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team2V)
+summary(att_subset_team2V_aov)
+
+att_subset_team2H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team2H)
+summary(att_subset_team2H_aov)
+```
+###Brooklyn Nets tests
+
+```{r}
+att_subset_team3V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==3) 
+
+att_subset_team3H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==3) 
+
+att_subset_team3V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team3V)
+summary(att_subset_team3V_aov)
+
+att_subset_team3H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team3H)
+summary(att_subset_team3H_aov)
+```
+###Charlotte Hornets tests
+
+```{r}
+att_subset_team4V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==4) 
+
+att_subset_team4H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==4) 
+
+att_subset_team4V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team4V)
+summary(att_subset_team4V_aov)
+
+att_subset_team4H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team4H)
+summary(att_subset_team4H_aov)
+
+plot(att_subset_team4V_aov, which=1)
+
+plot(att_subset_team4V_aov, which=2)
+
+plot(att_subset_team4H_aov, which=1)
+
+plot(att_subset_team4H_aov, which=2)
+
+tukey_att_subset_team4V_aov <- TukeyHSD(att_subset_team4V_aov)
+
+plot(tukey_att_subset_team4V_aov)
+
+tukey_att_subset_team4H_aov <- TukeyHSD(att_subset_team4H_aov)
+
+plot(tukey_att_subset_team4H_aov)
+
+summarise(group_by(att_subset_team4V, factored_percent_group), mean(PTS_1), sd(PTS_1), n())
+
+summarise(group_by(att_subset_team4H, factored_percent_group), mean(PTS_1), sd(PTS_1), n())
+```
+
+###Chicago Bulls tests
+
+```{r}
+att_subset_team5V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==5) 
+
+att_subset_team5H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==5) 
+
+att_subset_team5V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team5V)
+summary(att_subset_team5V_aov)
+
+att_subset_team5H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team5H)
+summary(att_subset_team5H_aov)
+```
+
+###Cleveland Cavaliers tests
+
+```{r}
+att_subset_team6V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==6) 
+
+att_subset_team6H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==6) 
+
+att_subset_team6V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team6V)
+summary(att_subset_team6V_aov)
+
+att_subset_team6H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team6H)
+summary(att_subset_team6H_aov)
+```
+
+###Dallas Mavericks tests
+
+```{r}
+att_subset_team7V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==7) 
+
+att_subset_team7H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==7) 
+
+att_subset_team7V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team7V)
+summary(att_subset_team7V_aov)
+
+att_subset_team7H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team7H)
+summary(att_subset_team7H_aov)
+```
+
+###Denver Nuggets tests
+
+```{r}
+att_subset_team8V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==8) 
+
+att_subset_team8H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==8) 
+
+att_subset_team8V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team8V)
+summary(att_subset_team8V_aov)
+
+att_subset_team8H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team8H)
+summary(att_subset_team8H_aov)
+```
+
+###Detroit Pistons tests
+
+```{r}
+att_subset_team9V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==9) 
+
+att_subset_team9H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==9) 
+
+att_subset_team9V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team9V)
+summary(att_subset_team9V_aov)
+
+att_subset_team9H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team9H)
+summary(att_subset_team9H_aov)
+```
+
+###Golden State Warriors tests
+
+```{r}
+att_subset_team10V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==10) 
+
+att_subset_team10H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==10) 
+
+att_subset_team10V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team10V)
+summary(att_subset_team10V_aov)
+
+att_subset_team10H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team10H)
+summary(att_subset_team10H_aov)
+```
+
+###Houston Rockets tests
+
+```{r}
+att_subset_team11V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==11) 
+
+att_subset_team11H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==11) 
+
+att_subset_team11V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team11V)
+summary(att_subset_team11V_aov)
+
+att_subset_team11H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team11H)
+summary(att_subset_team11H_aov)
+```
+
+###Indiana Pacers tests
+
+```{r}
+att_subset_team12V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==12) 
+
+att_subset_team12H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==12) 
+
+att_subset_team12V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team12V)
+summary(att_subset_team12V_aov)
+
+att_subset_team12H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team12H)
+summary(att_subset_team12H_aov)
+```
+
+###Los Angeles Clippers tests
+
+```{r}
+att_subset_team13V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==13) 
+
+att_subset_team13H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==13) 
+
+att_subset_team13V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team13V)
+summary(att_subset_team13V_aov)
+
+att_subset_team13H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team13H)
+summary(att_subset_team13H_aov)
+```
+
+###Los Angeles Lakers tests
+
+```{r}
+att_subset_team14V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==14) 
+
+att_subset_team14H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==14) 
+
+att_subset_team14V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team14V)
+summary(att_subset_team14V_aov)
+
+att_subset_team14H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team14H)
+summary(att_subset_team14H_aov)
+```
+
+###Memphis Grizzlies tests
+
+```{r}
+att_subset_team15V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==15) 
+
+att_subset_team15H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==15) 
+
+att_subset_team15V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team15V)
+summary(att_subset_team15V_aov)
+
+att_subset_team15H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team15H)
+summary(att_subset_team15H_aov)
+```
+
+###Miami Heat Tests
+
+```{r}
+att_subset_team16V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==16) 
+
+att_subset_team16H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==16) 
+
+att_subset_team16V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team16V)
+summary(att_subset_team16V_aov)
+
+att_subset_team16H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team16H)
+summary(att_subset_team16H_aov)
+```
+
+###Milwaukee Bucks tests
+
+```{r}
+att_subset_team17V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==17) 
+
+att_subset_team17H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==17) 
+
+att_subset_team17V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team17V)
+summary(att_subset_team17V_aov)
+
+att_subset_team17H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team17H)
+summary(att_subset_team17H_aov)
+
+
+plot(att_subset_team17H_aov, which=1)
+
+plot(att_subset_team17H_aov, which=2)
+
+tukey_att_subset_team17H_aov <- TukeyHSD(att_subset_team17H_aov)
+
+plot(tukey_att_subset_team17H_aov)
+
+
+summarise(group_by(att_subset_team17H, factored_percent_group), mean(PTS_1), sd(PTS_1), n())
+```
+
+###Minnesota Timberwolves tests
+
+```{r}
+att_subset_team18V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==18) 
+
+att_subset_team18H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==18) 
+
+att_subset_team18V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team18V)
+summary(att_subset_team18V_aov)
+
+att_subset_team18H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team18H)
+summary(att_subset_team18H_aov)
+```
+
+###New Orleans Pelicans tests
+
+```{r}
+att_subset_team19V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==19) 
+
+att_subset_team19H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==19) 
+
+att_subset_team19V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team19V)
+summary(att_subset_team19V_aov)
+
+att_subset_team199H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team19H)
+summary(att_subset_team199H_aov)
+```
+
+###New York Knicks tests
+
+```{r}
+att_subset_team20V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==20) 
+
+att_subset_team20H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==20) 
+
+att_subset_team20V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team20V)
+summary(att_subset_team20V_aov)
+
+att_subset_team20H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team20H)
+summary(att_subset_team20H_aov)
+```
+
+###Oklahoma City Thunder tests
+
+```{r}
+att_subset_team21V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==21) 
+
+att_subset_team21H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==21) 
+
+att_subset_team21V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team21V)
+summary(att_subset_team21V_aov)
+
+att_subset_team21H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team21H)
+summary(att_subset_team21H_aov)
+```
+
+###Orlando Magic Tests
+
+```{r}
+att_subset_team22V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==22) 
+
+att_subset_team22H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==22) 
+
+att_subset_team22V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team22V)
+summary(att_subset_team22V_aov)
+
+att_subset_team22H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team22H)
+summary(att_subset_team22H_aov)
+```
+
+###Philadelphia 76ers tests
+
+```{r}
+att_subset_team23V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==23) 
+
+att_subset_team23H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==23) 
+
+att_subset_team23V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team23V)
+summary(att_subset_team23V_aov)
+
+att_subset_team23H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team23H)
+summary(att_subset_team23H_aov)
+
+plot(att_subset_team23H_aov, which=1)
+
+plot(att_subset_team23H_aov, which=2)
+
+tukey_att_subset_team23H_aov <- TukeyHSD(att_subset_team23H_aov)
+
+plot(tukey_att_subset_team23H_aov)
+
+summarise(group_by(att_subset_team23H, factored_percent_group), mean(PTS_1), sd(PTS_1), n())
+```
+
+###Phoenix Suns tests
+
+```{r}
+att_subset_team24V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==24) 
+
+att_subset_team24H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==24) 
+
+att_subset_team24V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team24V)
+summary(att_subset_team24V_aov)
+
+att_subset_team24H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team24H)
+summary(att_subset_team24H_aov)
+
+plot(att_subset_team24H_aov, which=1)
+
+plot(att_subset_team24H_aov, which=2)
+
+tukey_att_subset_team24H_aov <- TukeyHSD(att_subset_team24H_aov)
+
+plot(tukey_att_subset_team24H_aov)
+
+summarise(group_by(att_subset_team24H, factored_percent_group), mean(PTS_1), sd(PTS_1), n())
+```
+###Portland Trailblazers tests
+
+```{r}
+att_subset_team25V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==25) 
+
+att_subset_team25H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==25) 
+
+att_subset_team25V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team25V)
+summary(att_subset_team25V_aov)
+
+att_subset_team25H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team25H)
+summary(att_subset_team25H_aov)
+```
+
+###Sacramento Kings tests
+
+```{r}
+att_subset_team26V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==26) 
+
+att_subset_team26H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==26) 
+
+att_subset_team26V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team26V)
+summary(att_subset_team26V_aov)
+
+att_subset_team26H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team26H)
+summary(att_subset_team26H_aov)
+
+plot(att_subset_team26H_aov, which=1)
+
+plot(att_subset_team26H_aov, which=2)
+
+tukey_att_subset_team26H_aov <- TukeyHSD(att_subset_team26H_aov)
+
+plot(tukey_att_subset_team26H_aov)
+
+summarise(group_by(att_subset_team26H, factored_percent_group), mean(PTS_1), sd(PTS_1), n())
+```
+
+###San Antonio Spurs tests
+
+```{r}
+att_subset_team27V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==27) 
+
+att_subset_team27H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==27) 
+
+att_subset_team27V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team27V)
+summary(att_subset_team27V_aov)
+
+att_subset_team27H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team27H)
+summary(att_subset_team27H_aov)
+```
+
+###Toronto Raptors tests
+
+```{r}
+att_subset_team28V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==28) 
+
+att_subset_team28H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==28) 
+
+att_subset_team28V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team28V)
+summary(att_subset_team28V_aov)
+
+att_subset_team28H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team28H)
+summary(att_subset_team28H_aov)
+```
+
+###Utah Jazz tests
+
+```{r}
+att_subset_team29V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==29) 
+
+att_subset_team29H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==29) 
+
+att_subset_team29V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team29V)
+summary(att_subset_team29V_aov)
+
+att_subset_team29H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team29H)
+summary(att_subset_team29H_aov)
+
+plot(att_subset_team29H_aov, which=1)
+
+plot(att_subset_team29H_aov, which=2)
+
+tukey_att_subset_team29H_aov <- TukeyHSD(att_subset_team29H_aov)
+
+plot(tukey_att_subset_team29H_aov)
+
+summarise(group_by(att_subset_team29H, factored_percent_group), mean(PTS_1), sd(PTS_1), n())
+```
+
+###Washington Wizards tests
+
+```{r}
+att_subset_team30V <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==30) 
+
+att_subset_team30H <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==30) 
+
+att_subset_team30V_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_team30V)
+summary(att_subset_team30V_aov)
+
+att_subset_team30H_aov <- aov(PTS_1 ~ factored_percent_group,
+                        data = att_subset_team30H)
+summary(att_subset_team30H_aov)
+```
+
+###Creating Conference and Division subsets
+
+```{r}
+att_subset_eastern_visitor <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor==1 | Attendance_worksheet_Final_modified$Visitor==2 | 
+Attendance_worksheet_Final_modified$Visitor== 3| Attendance_worksheet_Final_modified$Visitor== 4| Attendance_worksheet_Final_modified$Visitor== 5| Attendance_worksheet_Final_modified$Visitor== 9| Attendance_worksheet_Final_modified$Visitor== 12| Attendance_worksheet_Final_modified$Visitor== 16| Attendance_worksheet_Final_modified$Visitor== 17| Attendance_worksheet_Final_modified$Visitor== 20| Attendance_worksheet_Final_modified$Visitor== 22| Attendance_worksheet_Final_modified$Visitor== 23| Attendance_worksheet_Final_modified$Visitor== 28| Attendance_worksheet_Final_modified$Visitor== 30| Attendance_worksheet_Final_modified$Visitor== 6) 
+
+att_subset_eastern_home <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home==1 | Attendance_worksheet_Final_modified$Home==2 | 
+Attendance_worksheet_Final_modified$Home== 3| Attendance_worksheet_Final_modified$Home== 4| Attendance_worksheet_Final_modified$Home== 5| Attendance_worksheet_Final_modified$Home== 6| Attendance_worksheet_Final_modified$Home== 9| Attendance_worksheet_Final_modified$Home== 12| Attendance_worksheet_Final_modified$Home== 16| Attendance_worksheet_Final_modified$Home== 17| Attendance_worksheet_Final_modified$Home== 20| Attendance_worksheet_Final_modified$Home== 22| Attendance_worksheet_Final_modified$Home== 23| Attendance_worksheet_Final_modified$Home== 28| Attendance_worksheet_Final_modified$Home== 30)
+
+att_subset_western_visitor <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor== 7| Attendance_worksheet_Final_modified$Visitor== 8| 
+Attendance_worksheet_Final_modified$Visitor== 10| Attendance_worksheet_Final_modified$Visitor== 11| Attendance_worksheet_Final_modified$Visitor== 13| Attendance_worksheet_Final_modified$Visitor== 14| Attendance_worksheet_Final_modified$Visitor== 15| Attendance_worksheet_Final_modified$Visitor== 18| Attendance_worksheet_Final_modified$Visitor== 19| Attendance_worksheet_Final_modified$Visitor== 21| Attendance_worksheet_Final_modified$Visitor== 24| Attendance_worksheet_Final_modified$Visitor== 25| Attendance_worksheet_Final_modified$Visitor== 26| Attendance_worksheet_Final_modified$Visitor== 27| Attendance_worksheet_Final_modified$Visitor== 29) 
+
+att_subset_western_home <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home== 7| Attendance_worksheet_Final_modified$Home== 8| 
+Attendance_worksheet_Final_modified$Home== 10| Attendance_worksheet_Final_modified$Home== 11| Attendance_worksheet_Final_modified$Home== 13| Attendance_worksheet_Final_modified$Home== 14| Attendance_worksheet_Final_modified$Home== 15| Attendance_worksheet_Final_modified$Home== 18| Attendance_worksheet_Final_modified$Home== 19| Attendance_worksheet_Final_modified$Home== 21| Attendance_worksheet_Final_modified$Home== 24| Attendance_worksheet_Final_modified$Home== 25| Attendance_worksheet_Final_modified$Home== 26| Attendance_worksheet_Final_modified$Home== 27| Attendance_worksheet_Final_modified$Home== 29)
+
+att_southeast_home <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home== 1| Attendance_worksheet_Final_modified$Home== 4| 
+Attendance_worksheet_Final_modified$Home== 16| Attendance_worksheet_Final_modified$Home== 22| Attendance_worksheet_Final_modified$Home== 30)
+
+att_southeast_visitor <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor== 1| Attendance_worksheet_Final_modified$Visitor== 4| 
+Attendance_worksheet_Final_modified$Visitor== 16| Attendance_worksheet_Final_modified$Visitor== 22| Attendance_worksheet_Final_modified$Visitor== 30)
+
+att_atlantic_home <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home== 2| Attendance_worksheet_Final_modified$Home== 3| 
+Attendance_worksheet_Final_modified$Home== 20| Attendance_worksheet_Final_modified$Home== 23| Attendance_worksheet_Final_modified$Home== 28)
+
+att_atlantic_visitor <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor== 2| Attendance_worksheet_Final_modified$Visitor== 3| 
+Attendance_worksheet_Final_modified$Visitor== 20| Attendance_worksheet_Final_modified$Visitor== 23| Attendance_worksheet_Final_modified$Visitor== 28)
+
+att_central_home <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home== 5| Attendance_worksheet_Final_modified$Home== 6| 
+Attendance_worksheet_Final_modified$Home== 9| Attendance_worksheet_Final_modified$Home== 12| Attendance_worksheet_Final_modified$Home== 17)
+
+att_southwest_visitor <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor== 7| Attendance_worksheet_Final_modified$Visitor== 11| 
+Attendance_worksheet_Final_modified$Visitor== 15| Attendance_worksheet_Final_modified$Visitor== 19| Attendance_worksheet_Final_modified$Visitor== 27)
+
+att_southwest_home <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home== 7| Attendance_worksheet_Final_modified$Home== 11| 
+Attendance_worksheet_Final_modified$Home== 15| Attendance_worksheet_Final_modified$Home== 19| Attendance_worksheet_Final_modified$Home== 27)
+
+att_northwest_visitor <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor== 8| Attendance_worksheet_Final_modified$Visitor== 18| 
+Attendance_worksheet_Final_modified$Visitor== 21| Attendance_worksheet_Final_modified$Visitor== 25| Attendance_worksheet_Final_modified$Visitor== 29)
+
+att_northwest_home <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home== 8| Attendance_worksheet_Final_modified$Home== 18| 
+Attendance_worksheet_Final_modified$Home== 21| Attendance_worksheet_Final_modified$Home== 25| Attendance_worksheet_Final_modified$Home== 29)
+
+att_pacific_visitor <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor== 10| Attendance_worksheet_Final_modified$Visitor== 13| 
+Attendance_worksheet_Final_modified$Visitor== 14| Attendance_worksheet_Final_modified$Visitor== 24| Attendance_worksheet_Final_modified$Visitor== 26)
+
+att_pacific_home <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Home== 10| Attendance_worksheet_Final_modified$Home== 13| 
+Attendance_worksheet_Final_modified$Home== 14| Attendance_worksheet_Final_modified$Home== 24| Attendance_worksheet_Final_modified$Home== 26)
+
+att_central_visitor <- subset(Attendance_worksheet_Final_modified, Attendance_worksheet_Final_modified$Visitor== 5| Attendance_worksheet_Final_modified$Visitor== 6| 
+Attendance_worksheet_Final_modified$Visitor== 9| Attendance_worksheet_Final_modified$Visitor== 12| Attendance_worksheet_Final_modified$Visitor== 17)
+```
+
+###Eastern Conference tests
+
+```{r}
+att_subset_easternV_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_eastern_visitor)
+summary(att_subset_easternV_aov)
+
+att_subset_easternH_aov <- aov(PTS_1 ~ factored_percent_group,
+data = att_subset_eastern_home)
+summary(att_subset_easternH_aov)
+
+plot(att_subset_easternV_aov, which=1)
+
+plot(att_subset_easternV_aov, which=2)
+
+plot(att_subset_easternH_aov, which=1)
+
+plot(att_subset_easternH_aov, which=2)
+
+tukey_att_subset_easternH_aov <- TukeyHSD(att_subset_easternH_aov)
+
+plot(tukey_att_subset_easternH_aov)
+
+tukey_att_subset_easternV_aov <- TukeyHSD(att_subset_easternV_aov)
+
+plot(tukey_att_subset_easternV_aov)
+
+summarise(group_by(att_subset_eastern_home, factored_percent_group), mean(PTS_1), sd(PTS_1), n())
+
+
+summarise(group_by(att_subset_eastern_visitor, factored_percent_group), mean(PTS), sd(PTS), n()) 
+```
+
+###Western Conference tests
+
+```{r}
+att_subset_westernV_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_subset_western_visitor)
+summary(att_subset_westernV_aov)
+
+att_subset_westernH_aov <- aov(PTS_1 ~ factored_percent_group,
+data = att_subset_western_home)
+summary(att_subset_westernH_aov)
+
+plot(att_subset_westernH_aov, which=1)
+
+plot(att_subset_westernH_aov, which=2)
+
+tukey_att_subset_westernH_aov <- TukeyHSD(att_subset_westernH_aov)
+
+plot(tukey_att_subset_westernH_aov)
+
+summarise(group_by(att_subset_western_home, factored_percent_group), mean(PTS_1), sd(PTS_1), n()) 
+```
+
+###Atlantic Division tests
+
+```{r}
+att_subset_atlanticV_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_atlantic_visitor)
+summary(att_subset_atlanticV_aov)
+
+att_subset_atlanticH_aov <- aov(PTS_1 ~ factored_percent_group,
+data = att_atlantic_home)
+summary(att_subset_atlanticH_aov)
+
+plot(att_subset_atlanticH_aov, which=1)
+
+plot(att_subset_atlanticH_aov, which=2)
+
+tukey_att_subset_atlanticH_aov <- TukeyHSD(att_subset_atlanticH_aov)
+
+plot(tukey_att_subset_atlanticH_aov)
+
+summarise(group_by(att_atlantic_home, factored_percent_group), mean(PTS_1), sd(PTS_1), n()) 
+```
+
+###Central Division tests
+
+```{r}
+att_subset_centralV_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_central_visitor)
+summary(att_subset_centralV_aov)
+
+att_subset_centralH_aov <- aov(PTS_1 ~ factored_percent_group,
+data = att_central_home)
+summary(att_subset_centralH_aov)
+```
+
+##Northwest Division tests
+
+```{r}
+att_subset_northwestV_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_northwest_visitor)
+summary(att_subset_northwestV_aov)
+
+att_subset_northwestH_aov <- aov(PTS_1 ~ factored_percent_group,
+data = att_northwest_home)
+summary(att_subset_northwestH_aov)
+
+plot(att_subset_northwestH_aov, which=1)
+
+plot(att_subset_northwestH_aov, which=2)
+
+tukey_att_subset_northwestH_aov <- TukeyHSD(att_subset_northwestH_aov)
+
+plot(tukey_att_subset_northwestH_aov)
+
+summarise(group_by(att_northwest_home, factored_percent_group), mean(PTS_1), sd(PTS_1), n()) 
+```
+
+###Pacific Division tests
+
+```{r}
+att_subset_pacificV_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_pacific_visitor)
+summary(att_subset_pacificV_aov)
+
+att_subset_pacificH_aov <- aov(PTS_1 ~ factored_percent_group,
+data = att_pacific_home)
+summary(att_subset_pacificH_aov)
+
+```
+
+###Southeast Division tests
+
+```{r}
+att_subset_southeastV_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_southeast_visitor)
+summary(att_subset_southeastV_aov)
+
+att_subset_southeastH_aov <- aov(PTS_1 ~ factored_percent_group,
+data = att_southeast_home)
+summary(att_subset_southeastH_aov)
+
+plot(att_subset_southeastH_aov, which=1)
+
+plot(att_subset_southeastH_aov, which=2)
+
+
+tukey_att_subset_southeastH_aov <- TukeyHSD(att_subset_southeastH_aov)
+
+plot(tukey_att_subset_southeastH_aov)
+
+summarise(group_by(att_southeast_home, factored_percent_group), mean(PTS_1), sd(PTS_1), n()) 
+
+```
+
+###Southwest Division tests
+
+```{r}
+att_subset_southwestV_aov <- aov(PTS ~ factored_percent_group,
+                        data = att_southwest_visitor)
+summary(att_subset_southwestV_aov)
+
+att_subset_southwestH_aov <- aov(PTS_1 ~ factored_percent_group,
+data = att_southwest_home)
+summary(att_subset_southwestH_aov)
+
+plot(att_subset_southwestH_aov, which=1)
+
+plot(att_subset_southwestH_aov, which=2)
+
+
+tukey_att_subset_southwestH_aov <- TukeyHSD(att_subset_southwestH_aov)
+
+plot(tukey_att_subset_southwestH_aov)
+
+summarise(group_by(att_southwest_home, factored_percent_group), mean(PTS_1), sd(PTS_1), n()) 
+```
